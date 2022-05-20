@@ -1,8 +1,8 @@
 # laravel-db2
-[![Latest Stable Version](https://poser.pugx.org/cooperl/laravel-db2/v/stable)](https://packagist.org/packages/cooperl/laravel-db2)
-[![Total Downloads](https://poser.pugx.org/cooperl/laravel-db2/downloads)](https://packagist.org/packages/cooperl/laravel-db2)
-[![Latest Unstable Version](https://poser.pugx.org/cooperl/laravel-db2/v/unstable)](https://packagist.org/packages/cooperl/laravel-db2)
-[![License](https://poser.pugx.org/cooperl/laravel-db2/license)](https://packagist.org/packages/cooperl/laravel-db2)
+[![Latest Stable Version](https://poser.pugx.org/easi-power/laravel-db2/v/stable)](https://packagist.org/packages/easi-power/laravel-db2)
+[![Total Downloads](https://poser.pugx.org/easi-power/laravel-db2/downloads)](https://packagist.org/packages/easi-power/laravel-db2)
+[![Latest Unstable Version](https://poser.pugx.org/easi-power/laravel-db2/v/unstable)](https://packagist.org/packages/easi-power/laravel-db2)
+[![License](https://poser.pugx.org/easi-power/laravel-db2/license)](https://packagist.org/packages/easi-power/laravel-db2)
 
 laravel-db2 is a simple DB2 service provider for Laravel.
 It provides DB2 Connection by extending the Illuminate Database component of the laravel framework.
@@ -17,7 +17,7 @@ It provides DB2 Connection by extending the Illuminate Database component of the
 Add laravel-db2 to your composer.json file:
 ```
 "require": {
-    "cooperl/laravel-db2": "^8.0"
+    "easi-power/laravel-db2": "^8.0"
 }
 ```
 Use [composer](https://getcomposer.org) to install this package.
@@ -58,6 +58,10 @@ Simply add this code at the end of your ``config/database.php`` file:
         'port' => 50000,
         'date_format' => 'Y-m-d H:i:s',
         // or 'Y-m-d H:i:s.u' / 'Y-m-d-H.i.s.u'...
+        // Used to confirm strings to UTF-8
+        'from_encoding' => null, // "latin5"
+        // Can be used to overwrite the default result processor. E.g. My\Custom\DB2Processor::class
+        // If you leave this empty the default processor wil be used. 
         'odbc_keywords' => [
             'SIGNON' => 3,
             'SSL' => 0,

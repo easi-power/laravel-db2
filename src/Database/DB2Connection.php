@@ -1,22 +1,22 @@
 <?php
 
-namespace Cooperl\DB2\Database;
+namespace Easi\DB2\Database;
 
 use PDO;
 
 use Illuminate\Database\Connection;
 
-use Cooperl\DB2\Database\Schema\Builder;
-use Cooperl\DB2\Database\Query\Processors\DB2Processor;
-use Cooperl\DB2\Database\Query\Processors\DB2ZOSProcessor;
-use Cooperl\DB2\Database\Query\Grammars\DB2Grammar as QueryGrammar;
-use Cooperl\DB2\Database\Schema\Grammars\DB2Grammar as SchemaGrammar;
-use Cooperl\DB2\Database\Schema\Grammars\DB2ExpressCGrammar;
+use Easi\DB2\Database\Schema\Builder;
+use Easi\DB2\Database\Query\Processors\DB2Processor;
+use Easi\DB2\Database\Query\Processors\DB2ZOSProcessor;
+use Easi\DB2\Database\Query\Grammars\DB2Grammar as QueryGrammar;
+use Easi\DB2\Database\Schema\Grammars\DB2Grammar as SchemaGrammar;
+use Easi\DB2\Database\Schema\Grammars\DB2ExpressCGrammar;
 
 /**
  * Class DB2Connection
  *
- * @package Cooperl\DB2\Database
+ * @package Easi\DB2\Database
  */
 class DB2Connection extends Connection
 {
@@ -86,7 +86,7 @@ class DB2Connection extends Connection
     /**
      * Get a schema builder instance for the connection.
      *
-     * @return \Cooperl\DB2\Database\Schema\Builder
+     * @return \Easi\DB2\Database\Schema\Builder
      */
     public function getSchemaBuilder()
     {
@@ -137,19 +137,34 @@ class DB2Connection extends Connection
     /**
      * Get the default post processor instance.
      *
-     * @return \Cooperl\DB2\Database\Query\Processors\DB2Processor|\Cooperl\DB2\Database\Query\Processors\DB2ZOSProcessor
+     * @return \Easi\DB2\Database\Query\Processors\DB2Processor|\Easi\DB2\Database\Query\Processors\DB2ZOSProcessor
      */
     protected function getDefaultPostProcessor()
     {
-        switch ($this->config['driver']) {
-            case 'db2_zos_odbc':
-                $defaultProcessor = new DB2ZOSProcessor;
-                break;
-            default:
-                $defaultProcessor = new DB2Processor;
-                break;
+        if ($this->config['driver'] === 'db2_zos_odbc') {
+            $defaultProcessor = new DB2ZOSProcessor;
+        } else {
+            $defaultProcessor = new DB2Processor;
         }
 
         return $defaultProcessor;
+    }
+
+    /**
+     * Bind values to their parameters in the given statement.
+     *
+     * @param  \PDOStatement  $statement
+     * @param  array  $bindings
+     * @return void
+     */
+    public function bindValues($statement, $bindings)
+    {
+        foreach ($bindings as $key => $value) {
+            $statement->bindValue(
+                is_string($key) ? $key : $key + 1,
+                $this->config('from_encoding') ? iconv($this->config('from_encoding'), 'utf-8', $value) : $value,
+                is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR
+            );
+        }
     }
 }
