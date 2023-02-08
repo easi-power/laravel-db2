@@ -56,13 +56,17 @@ Simply add this code at the end of your ``config/database.php`` file:
         'prefix' => '',
         'schema' => 'default schema',
         'port' => 50000,
-        'date_format' => 'Y-m-d H:i:s',
         // or 'Y-m-d H:i:s.u' / 'Y-m-d-H.i.s.u'...
+        'date_format' => 'Y-m-d H:i:s',
         // Used to confirm strings to UTF-8
         'from_encoding' => null, // "latin5"
-        // Can be used to overwrite the default result processor. E.g. My\Custom\DB2Processor::class
-        // If you leave this empty the default processor wil be used. 
+        // By default, the package will trim all incoming and outgoing values.
+        // If there are actors on your database (rpg, cobol, ...) which are storing spaces into your varchar fields
+        // => make sure to enable this one.
+        'trim_cols' => false,
         'odbc_keywords' => [
+            // Trim char-fields by default
+            'TrimCharFields' => 1,
             'SIGNON' => 3,
             'SSL' => 0,
             'CommitMode' => 2,

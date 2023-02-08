@@ -113,6 +113,10 @@ class DB2Connection extends Connection
             $defaultGrammar->setOffsetCompatibilityMode($this->config['offset_compatibility_mode']);
         }
 
+        if(array_key_exists('trim_cols', $this->config)) {
+            $defaultGrammar->setTrimCols($this->config['trim_cols']);
+        }
+
         return $this->withTablePrefix($defaultGrammar);
     }
 
