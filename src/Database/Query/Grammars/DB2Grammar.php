@@ -18,13 +18,18 @@ class DB2Grammar extends Grammar
      *
      * @var string
      */
-    protected $dateFormat;
+    protected string $dateFormat;
 
     /**
      * Offset compatibility mode true triggers FETCH FIRST X ROWS and ROW_NUM behavior for older versions of DB2
      * @var bool
      */
-    protected $offsetCompatibilityMode = true;
+    protected bool $offsetCompatibilityMode = true;
+
+    /**
+     * Load config set in config/database.php
+     */
+    protected bool $trimCols = false;
 
     /**
      * Wrap a single string in keyword identifiers.
@@ -248,6 +253,11 @@ class DB2Grammar extends Grammar
         $this->offsetCompatibilityMode = $bool;
     }
 
+    public function setTrimCols(bool $value)
+    {
+        $this->trimCols = $value;
+    }
+
     /**
      * Compile the SQL statement to define a savepoint.
      *
@@ -347,5 +357,19 @@ class DB2Grammar extends Grammar
         }
     }
 
-
+    /**
+     * Get an array of all the where clauses for the query.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return array
+     */
+    protected function compileWheresToArray($query)
+    {
+        return collect($query->wheres)->map(function ($where) use ($query) {
+            if($this->trimCols && isset($where['column'])) {
+                $where['column'] = "trim(".$where['column'].")";
+            }
+            return $where['boolean'].' '.$this->{"where{$where['type']}"}($query, $where);
+        })->all();
+    }
 }
