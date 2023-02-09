@@ -367,7 +367,9 @@ class DB2Grammar extends Grammar
     {
         return collect($query->wheres)->map(function ($where) use ($query) {
             if($this->trimCols && isset($where['column'])) {
-                $where['column'] = "trim(".$where['column'].")";
+                if(isset($where['type']) && !in_array($where['type'], ['Date', 'Time', 'Day', 'Month', 'Year'])) {
+                    $where['column'] = "trim(".$where['column'].")";
+                }
             }
             return $where['boolean'].' '.$this->{"where{$where['type']}"}($query, $where);
         })->all();
