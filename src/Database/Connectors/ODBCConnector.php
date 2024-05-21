@@ -18,10 +18,10 @@ class ODBCConnector extends DB2Connector
     {
         $dsnParts = [
             'odbc:DRIVER=%s',
-            'System=%s',
-            'Database=%s',
-            'UserID=%s',
-            'Password=%s',
+            'SYSTEM=%s',
+            'DATABASE=%s',
+            'USERID=%s',
+            'PASSWORD=%s',
         ];
 
         $dsnConfig = [
