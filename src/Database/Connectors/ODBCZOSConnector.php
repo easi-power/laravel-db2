@@ -18,12 +18,12 @@ class ODBCZOSConnector extends ODBCConnector
     {
         $dsnParts = [
             'odbc:DRIVER=%s',
-            'Database=%s',
-            'Hostname=%s',
-            'Port=%s',
-            'Protocol=TCPIP',
-            'Uid=%s',
-            'Pwd=%s',
+            'DATABASE=%s',
+            'HOSTNAME=%s',
+            'PORT=%s',
+            'PROTOCOL=TCPIP',
+            'UID=%s',
+            'PWD=%s',
             '', // Just to add a semicolon to the end of string
         ];
 
