@@ -102,7 +102,7 @@ class Builder extends \Illuminate\Database\Schema\Builder
             return call_user_func($this->resolver, $table, $callback);
         }
 
-        return new \Easi\DB2\Database\Schema\Blueprint($table, $callback);
+        return new \Easi\DB2\Database\Schema\Blueprint($this->connection, $table, $callback);
     }
 
     /**
