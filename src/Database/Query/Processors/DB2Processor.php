@@ -72,7 +72,7 @@ class DB2Processor extends Processor
         {
             $results[$index] = array_map(function ($el) {
                 $el = is_string($el) ? trim($el) : $el;
-                if(isset($this->config['from_encoding'])) {
+                if(isset($this->config['from_encoding']) && !is_null($el)) {
                     return iconv($this->config['from_encoding'], 'utf-8', $el);
                 } else {
                     return $el;
