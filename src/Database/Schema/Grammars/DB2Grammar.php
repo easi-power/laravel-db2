@@ -57,7 +57,7 @@ class DB2Grammar extends Grammar
      *
      * @return string
      */
-    public function compileTableExists($schema = null, $table = null)
+    public function compileTableExists()
     {
         return 'select * from information_schema.tables where table_schema = upper(?) and table_name = upper(?)';
     }
@@ -81,7 +81,7 @@ class DB2Grammar extends Grammar
      *
      * @return string
      */
-    public function compileCreate(Blueprint $blueprint, Fluent $command)
+    public function compileCreate(Blueprint $blueprint, Fluent $command, Connection $connection)
     {
         $columns = implode(', ', $this->getColumns($blueprint));
         $sql = 'create table ' . $this->wrapTable($blueprint);
