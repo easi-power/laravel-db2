@@ -48,11 +48,11 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
      * @param  \Illuminate\Database\Schema\Grammars\Grammar  $grammar
      * @return array
      */
-    public function toSql()
+    public function toSql(Connection $connection, Grammar $grammar)
     {
-        $this->addReplyListEntryCommands($this->connection);
+        $this->addReplyListEntryCommands($connection);
 
-        return parent::toSql();
+        return parent::toSql($connection, $grammar);
     }
 
     /**
