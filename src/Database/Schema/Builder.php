@@ -48,27 +48,27 @@ class Builder extends \Illuminate\Database\Schema\Builder
     public function getColumnListing($table)
     {
         $sql = $this->grammar->compileColumnExists();
-        $database = $this->connection->getDatabaseName();
-        $table = $this->connection->getTablePrefix() . $table;
+        $schemaTable = explode('.', $table);
 
-        $tableExploded = explode('.', $table);
-
-        if (count($tableExploded) > 1) {
-            $database = $tableExploded[0];
-            $table = $tableExploded[1];
+        if (count($schemaTable) > 1) {
+            $schema = $schemaTable[0];
+            $table = $schemaTable[1];
+        } else {
+            $schema = $this->connection->getDefaultSchema();
+            $table = $this->connection->getTablePrefix() . $table;
         }
 
         $results = $this->connection->select($sql, [
-            $database,
+            $schema,
             $table,
         ]);
 
         $res = $this->connection->getPostProcessor()
-                                ->processColumnListing($results);
+            ->processColumnListing($results);
 
         return array_values(array_map(function($r) {
             return $r->column_name;
-        }, $res));
+        }, $results));
     }
 
     /**
@@ -102,7 +102,7 @@ class Builder extends \Illuminate\Database\Schema\Builder
             return call_user_func($this->resolver, $table, $callback);
         }
 
-        return new \Easi\DB2\Database\Schema\Blueprint($this->connection, $table, $callback);
+        return new \Easi\DB2\Database\Schema\Blueprint($table, $callback);
     }
 
     /**
