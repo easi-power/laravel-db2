@@ -53,6 +53,16 @@ class DB2Connection extends Connection
     }
 
     /**
+     * Get the name of the current schema.
+     *
+     * @return string
+     */
+    public function getCurrentSchema(): string
+    {
+        return $this->currentSchema;
+    }
+
+    /**
      * Reset to default the current schema.
      *
      * @return string
