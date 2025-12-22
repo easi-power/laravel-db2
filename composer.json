@@ -21,6 +21,10 @@
     {
         "name": "Levi Vanheel",
         "role": "Developer"
+    },
+    {
+        "name": "Neal Van Meerbeek",
+        "role": "Developer"
     }
     ],
     "require": {
