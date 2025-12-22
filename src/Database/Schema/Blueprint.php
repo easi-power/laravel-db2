@@ -107,12 +107,9 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
         switch ($type) {
             case 'index':
                 $indexSystem = false;
-
-                if (!is_null($index)) {
-                    //$indexSystem = $index;
+                if (is_null($index)) {
+                    $index = $this->createIndexName($type, $columns);
                 }
-
-                $index = $this->createIndexName($type, $columns);
 
                 return $this->addCommand($type, compact('index', 'indexSystem', 'columns'));
             default:
