@@ -75,10 +75,8 @@ class DB2Grammar extends Grammar
     /**
      * Compile a create table command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint $blueprint
-     * @param  \Illuminate\Support\Fluent            $command
-     * @param  \Illuminate\Database\Connection       $connection
-     *
+     * @param Blueprint $blueprint
+     * @param Fluent $command
      * @return string
      */
     public function compileCreate(Blueprint $blueprint, Fluent $command)
@@ -98,13 +96,11 @@ class DB2Grammar extends Grammar
     /**
      * Compile a label command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint $blueprint
-     * @param  \Illuminate\Support\Fluent            $command
-     * @param  \Illuminate\Database\Connection       $connection
-     *
+     * @param Blueprint $blueprint
+     * @param Fluent $command
      * @return string
      */
-    public function compileLabel(Blueprint $blueprint, Fluent $command, Connection $connection)
+    public function compileLabel(Blueprint $blueprint, Fluent $command)
     {
         return 'label on table ' . $this->wrapTable($blueprint) . ' is \'' . $command->label . '\'';
     }
@@ -902,13 +898,11 @@ class DB2Grammar extends Grammar
     /**
      * Compile an addReplyListEntry command.
      *
-     * @param  \Illuminate\Database\Schema\Blueprint $blueprint
-     * @param  \Illuminate\Support\Fluent            $command
-     * @param  \Illuminate\Database\Connection  $connection
-     *
+     * @param Blueprint $blueprint
+     * @param Fluent $command
      * @return string
      */
-    public function compileAddReplyListEntry(Blueprint $blueprint, Fluent $command, Connection $connection)
+    public function compileAddReplyListEntry(Blueprint $blueprint, Fluent $command)
     {
         $sequenceNumberQuery = <<<EOT
             with reply_list_info(sequence_number) as (
@@ -927,7 +921,7 @@ class DB2Grammar extends Grammar
             )
 EOT;
 
-        $blueprint->setReplyListSequenceNumber($sequenceNumber = $connection->selectOne($sequenceNumberQuery)->sequence_number);
+        $blueprint->setReplyListSequenceNumber($sequenceNumber = $this->connection->selectOne($sequenceNumberQuery)->sequence_number);
         $command->command = "ADDRPYLE SEQNBR($sequenceNumber) MSGID(CPA32B2) RPY(''I'')";
 
         return $this->compileExecuteCommand($blueprint, $command);

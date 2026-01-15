@@ -61,11 +61,25 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
      * @param  \Illuminate\Database\Connection  $connection
      * @return void
      */
-    protected function addReplyListEntryCommands(Connection $connection)
+    protected function addReplyListEntryCommands(Connection $connection): void
     {
-        if ($this->commandsNamed(['dropColumn', 'renameColumn'])->count() > 0) {
-            array_unshift($this->commands, $this->createCommand('addReplyListEntry'), $this->createCommand('changeJob'));
-            array_push($this->commands, $this->createCommand('removeReplyListEntry'));
+        $hasDropOrRename = false;
+
+        foreach ($this->getCommands() as $command) {
+            if (in_array($command->get('name'), ['dropColumn', 'renameColumn'], true)) {
+                $hasDropOrRename = true;
+                break;
+            }
+        }
+
+        if ($hasDropOrRename) {
+            array_unshift(
+                $this->commands,
+                $this->createCommand('addReplyListEntry'),
+                $this->createCommand('changeJob')
+            );
+
+            $this->commands[] = $this->createCommand('removeReplyListEntry');
         }
     }
 
@@ -94,13 +108,15 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
     /**
      * Add a new index command to the blueprint.
      *
-     * @param  string $type
-     * @param  string|array $columns
-     * @param  string $index
      *
+     * @param string $type
+     * @param array|string $columns
+     * @param string $index
+     * @param null $algorithm
+     * @param null $operatorClass
      * @return \Illuminate\Support\Fluent
      */
-    protected function indexCommand($type, $columns, $index, $algorithm = null)
+    protected function indexCommand($type, $columns, $index, $algorithm = null, $operatorClass = null)
     {
         $columns = (array) $columns;
 
