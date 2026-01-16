@@ -92,17 +92,19 @@ class Builder extends \Illuminate\Database\Schema\Builder
      * Create a new command set with a Closure.
      *
      * @param string $table
-     * @param \Closure $callback
+     * @param Closure|null $callback
      *
-     * @return \Easi\DB2\Database\Schema\Blueprint
+     * @return Blueprint
      */
-    protected function createBlueprint($table, Closure $callback = null)
+    protected function createBlueprint($table, ?Closure $callback = null)
     {
+        $connection = $this->connection;
+
         if (isset($this->resolver)) {
             return call_user_func($this->resolver, $table, $callback);
         }
 
-        return new \Easi\DB2\Database\Schema\Blueprint($table, $callback);
+        return new \Easi\DB2\Database\Schema\Blueprint($connection, $table, $callback);
     }
 
     /**
