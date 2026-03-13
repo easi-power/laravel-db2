@@ -25,6 +25,10 @@
     {
         "name": "Neal Van Meerbeek",
         "role": "Developer"
+    },
+    {
+        "name": "Joppe Kerkhofs",
+        "role": "Developer"
     }
     ],
     "require": {
