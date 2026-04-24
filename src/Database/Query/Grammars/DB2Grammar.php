@@ -4,7 +4,6 @@ namespace Easi\DB2\Database\Query\Grammars;
 
 use Illuminate\Database\Query\Grammars\Grammar;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\Log;
 
 /**
  * Class DB2Grammar
@@ -67,24 +66,34 @@ class DB2Grammar extends Grammar
      */
     public function compileSelect(Builder $query)
     {
-        if(!$this->offsetCompatibilityMode){
-            return parent::compileSelect($query);
+        if (!$this->offsetCompatibilityMode) {
+            $sql = parent::compileSelect($query);
+        } else {
+            if (is_null($query->columns)) {
+                $query->columns = ['*'];
+            }
+
+            $components = $this->compileComponents($query);
+
+            // If an offset is present on the query, we will need to wrap the query in
+            // a big "ANSI" offset syntax block. This is very nasty compared to the
+            // other database systems but is necessary for implementing features.
+            $sql = $query->offset > 0
+                ? $this->compileAnsiOffset($query, $components)
+                : $this->concatenate($components);
         }
 
-        if (is_null($query->columns)) {
-            $query->columns = ['*'];
+        /** @var array<string, Builder> $expressions */
+        $expressions = get_object_vars($query)['expressions'] ?? [];
+        if (count($expressions) === 0) {
+            return $sql;
         }
 
-        $components = $this->compileComponents($query);
+        $cteParts = collect($expressions)
+            ->map(fn (Builder $expr, string $name) => "$name AS ({$this->compileSelect($expr)})")
+            ->implode(', ');
 
-        // If an offset is present on the query, we will need to wrap the query in
-        // a big "ANSI" offset syntax block. This is very nasty compared to the
-        // other database systems but is necessary for implementing features.
-        if ($query->offset > 0) {
-            return $this->compileAnsiOffset($query, $components);
-        }
-
-        return $this->concatenate($components);
+        return "WITH $cteParts $sql";
     }
 
     /**
