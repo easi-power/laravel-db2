@@ -9,6 +9,7 @@ use Easi\DB2\Database\Connectors\ODBCConnector;
 use Easi\DB2\Database\Connectors\IBMConnector;
 use Easi\DB2\Database\Connectors\ODBCZOSConnector;
 use Easi\DB2\Queue\DB2Connector;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Support\ServiceProvider;
 
@@ -35,6 +36,18 @@ class DB2ServiceProvider extends ServiceProvider
     {
         $configPath = __DIR__ . '/config/db2.php';
         $this->publishes([$configPath => $this->getConfigPath()], 'config');
+
+        Builder::macro('withExpression', function (string $name, Builder $subquery): Builder {
+            if (!isset($this->expressions)) {
+                $this->expressions = [];
+                $this->bindings = array_merge(['expressions' => []], $this->bindings);
+            }
+            $this->expressions[$name] = $subquery;
+            foreach ($subquery->getBindings() as $binding) {
+                $this->bindings['expressions'][] = $binding;
+            }
+            return $this;
+        });
     }
 
     /**
