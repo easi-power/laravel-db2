@@ -36,8 +36,6 @@ class DB2Grammar extends Grammar
         'bigInteger',
     ];
 
-    protected $transactions = true;
-
     /**
      * Wrap a single string in keyword identifiers.
      *
