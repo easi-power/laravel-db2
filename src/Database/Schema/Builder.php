@@ -4,6 +4,7 @@ namespace Easi\DB2\Database\Schema;
 
 use Closure;
 use Illuminate\Database\Schema\Blueprint;
+use LogicException;
 
 /**
  * Class Builder
@@ -19,7 +20,7 @@ class Builder extends \Illuminate\Database\Schema\Builder
      *
      * @return bool
      */
-    public function hasTable($table)
+    public function hasTable($table): bool
     {
         $sql = $this->grammar->compileTableExists();
         $schemaTable = explode(".", $table);
@@ -45,7 +46,7 @@ class Builder extends \Illuminate\Database\Schema\Builder
      *
      * @return array
      */
-    public function getColumnListing($table)
+    public function getColumnListing($table): array
     {
         $sql = $this->grammar->compileColumnExists();
         $schemaTable = explode('.', $table);
@@ -63,9 +64,6 @@ class Builder extends \Illuminate\Database\Schema\Builder
             $table,
         ]);
 
-        $res = $this->connection->getPostProcessor()
-            ->processColumnListing($results);
-
         return array_values(array_map(function($r) {
             return $r->column_name;
         }, $results));
@@ -76,7 +74,7 @@ class Builder extends \Illuminate\Database\Schema\Builder
      *
      * @param Blueprint $blueprint
      */
-    protected function build(Blueprint $blueprint)
+    protected function build(Blueprint $blueprint): void
     {
         $schemaTable = explode(".", $blueprint->getTable());
 
@@ -96,7 +94,7 @@ class Builder extends \Illuminate\Database\Schema\Builder
      *
      * @return Blueprint
      */
-    protected function createBlueprint($table, ?Closure $callback = null)
+    protected function createBlueprint($table, ?Closure $callback = null): Blueprint
     {
         $connection = $this->connection;
 
@@ -108,11 +106,11 @@ class Builder extends \Illuminate\Database\Schema\Builder
     }
 
     /**
-     * Get all of the table names for the database.
+     * Get all the table names for the database.
      *
      * @return array
      */
-    public function getAllTables()
+    public function getAllTables(): array
     {
         $list = $this->connection->select(
             $this->grammar->compileGetAllTables(),
@@ -129,9 +127,9 @@ class Builder extends \Illuminate\Database\Schema\Builder
      *
      * @return void
      *
-     * @throws \LogicException
+     * @throws LogicException
      */
-    public function dropAllTables()
+    public function dropAllTables(): void
     {
         $tables = $this->getAllTables();
         foreach ($tables as $table)

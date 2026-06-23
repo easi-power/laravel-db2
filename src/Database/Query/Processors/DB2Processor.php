@@ -13,7 +13,7 @@ use Easi\DB2\Database\Query\Grammars\DB2Grammar;
  */
 class DB2Processor extends Processor
 {
-    protected $config;
+    protected array $config;
 
     public function __construct(array $config = [])
     {
@@ -23,19 +23,19 @@ class DB2Processor extends Processor
     /**
      * Process an "insert get ID" query.
      *
-     * @param  \Illuminate\Database\Query\Builder $query
-     * @param  string                             $sql
-     * @param  array                              $values
-     * @param  string                             $sequence
+     * @param Builder $query
+     * @param string $sql
+     * @param array $values
+     * @param string|array|null $sequence
      *
-     * @return int/array
+     * @return int|array
      */
-    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
+    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null): int|array
     {
         $sequenceStr = $sequence ?: 'id';
 
         if (is_array($sequence)) {
-            $grammar = new DB2Grammar;
+            $grammar = new DB2Grammar($query->getConnection());
             $sequenceStr = $grammar->columnize($sequence);
         }
 
@@ -62,11 +62,11 @@ class DB2Processor extends Processor
     /**
      * Process the results of a "select" query.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param Builder $query
      * @param  array  $results
      * @return array
      */
-    public function processSelect(Builder $query, $results)
+    public function processSelect(Builder $query, $results): array
     {
         foreach ($results as $index=>$result)
         {

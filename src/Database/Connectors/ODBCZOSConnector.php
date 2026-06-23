@@ -14,7 +14,7 @@ class ODBCZOSConnector extends ODBCConnector
      *
      * @return string
      */
-    protected function getDsn(array $config)
+    protected function getDsn(array $config): string
     {
         $dsnParts = [
             'odbc:DRIVER=%s',

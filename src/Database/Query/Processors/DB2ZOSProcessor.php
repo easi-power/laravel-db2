@@ -16,19 +16,19 @@ class DB2ZOSProcessor extends Processor
     /**
      * Process an "insert get ID" query.
      *
-     * @param  \Illuminate\Database\Query\Builder $query
-     * @param  string                             $sql
-     * @param  array                              $values
-     * @param  string                             $sequence
+     * @param Builder $query
+     * @param string $sql
+     * @param array $values
+     * @param string|array|null $sequence
      *
-     * @return int/array
+     * @return int|array
      */
-    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null)
+    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null): int|array
     {
         $sequenceStr = $sequence ?: 'id';
 
         if (is_array($sequence)) {
-            $grammar = new DB2Grammar;
+            $grammar = new DB2Grammar($query->getConnection());
             $sequenceStr = $grammar->columnize($sequence);
         }
 

@@ -2,19 +2,22 @@
 
 namespace Easi\DB2\Database;
 
+use Closure;
 use Easi\DB2\Exceptions\TranslatedQueryException;
+use Illuminate\Database\Grammar;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\Log;
 use PDO;
 
 use Illuminate\Database\Connection;
 
 use Easi\DB2\Database\Schema\Builder;
+use Easi\DB2\Database\Query\Builder as QueryBuilder;
 use Easi\DB2\Database\Query\Processors\DB2Processor;
 use Easi\DB2\Database\Query\Processors\DB2ZOSProcessor;
 use Easi\DB2\Database\Query\Grammars\DB2Grammar as QueryGrammar;
 use Easi\DB2\Database\Schema\Grammars\DB2Grammar as SchemaGrammar;
 use Easi\DB2\Database\Schema\Grammars\DB2ExpressCGrammar;
+use PDOStatement;
 
 /**
  * Class DB2Connection
@@ -28,13 +31,13 @@ class DB2Connection extends Connection
      *
      * @var string
      */
-    protected $defaultSchema;
+    protected string $defaultSchema;
     /**
      * The name of the current schema in use.
      *
      * @var string
      */
-    protected $currentSchema;
+    protected string $currentSchema;
 
     public function __construct(PDO $pdo, $database = '', $tablePrefix = '', array $config = [])
     {
@@ -47,7 +50,7 @@ class DB2Connection extends Connection
      *
      * @return string
      */
-    public function getDefaultSchema()
+    public function getDefaultSchema(): string
     {
         return $this->defaultSchema;
     }
@@ -64,10 +67,8 @@ class DB2Connection extends Connection
 
     /**
      * Reset to default the current schema.
-     *
-     * @return string
      */
-    public function resetCurrentSchema()
+    public function resetCurrentSchema(): void
     {
         $this->setCurrentSchema($this->getDefaultSchema());
     }
@@ -76,10 +77,8 @@ class DB2Connection extends Connection
      * Set the name of the current schema.
      *
      * @param $schema
-     *
-     * @return string
      */
-    public function setCurrentSchema($schema)
+    public function setCurrentSchema($schema): void
     {
         $this->statement('SET SCHEMA ?', [strtoupper($schema)]);
     }
@@ -88,10 +87,8 @@ class DB2Connection extends Connection
      * Execute a system command on IBMi.
      *
      * @param $command
-     *
-     * @return string
      */
-    public function executeCommand($command)
+    public function executeCommand($command): void
     {
         $this->statement('CALL QSYS2.QCMDEXC(?)', [$command]);
     }
@@ -99,9 +96,9 @@ class DB2Connection extends Connection
     /**
      * Get a schema builder instance for the connection.
      *
-     * @return \Easi\DB2\Database\Schema\Builder
+     * @return Builder
      */
-    public function getSchemaBuilder()
+    public function getSchemaBuilder(): Builder
     {
         if (is_null($this->schemaGrammar)) {
             $this->useDefaultSchemaGrammar();
@@ -111,9 +108,21 @@ class DB2Connection extends Connection
     }
 
     /**
-     * @return \Illuminate\Database\Grammar
+     * Get a new query builder instance.
+     *
+     * @return QueryBuilder
      */
-    protected function getDefaultQueryGrammar()
+    public function query(): QueryBuilder
+    {
+        return new QueryBuilder(
+            $this, $this->getQueryGrammar(), $this->getPostProcessor()
+        );
+    }
+
+    /**
+     * @return Grammar|QueryGrammar
+     */
+    protected function getDefaultQueryGrammar(): Grammar|QueryGrammar
     {
         $defaultGrammar = new QueryGrammar($this);
 
@@ -125,44 +134,28 @@ class DB2Connection extends Connection
             $defaultGrammar->setOffsetCompatibilityMode($this->config['offset_compatibility_mode']);
         }
 
-        // Apply table prefix if it exists
-        if ($this->tablePrefix !== '') {
-            $defaultGrammar->setTablePrefix($this->tablePrefix);
-        }
-
         return $defaultGrammar;
     }
 
     /**
      * Default grammar for specified Schema
      *
-     * @return \Illuminate\Database\Grammar
+     * @return SchemaGrammar|Grammar|DB2ExpressCGrammar
      */
-    protected function getDefaultSchemaGrammar()
+    protected function getDefaultSchemaGrammar(): SchemaGrammar|Grammar|DB2ExpressCGrammar
     {
-        switch ($this->config['driver']) {
-            case 'db2_expressc_odbc':
-                $defaultGrammar = new DB2ExpressCGrammar($this);
-                break;
-            default:
-                $defaultGrammar = new SchemaGrammar($this);
-                break;
-        }
-
-        // Apply table prefix if it exists
-        if ($this->tablePrefix !== '') {
-            $defaultGrammar->setTablePrefix($this->tablePrefix);
-        }
-
-        return $defaultGrammar;
+        return match ($this->config['driver']) {
+            'db2_expressc_odbc' => new DB2ExpressCGrammar($this),
+            default => new SchemaGrammar($this),
+        };
     }
 
     /**
-     * Get the default post processor instance.
+     * Get the default post-processor instance.
      *
-     * @return \Easi\DB2\Database\Query\Processors\DB2Processor|\Easi\DB2\Database\Query\Processors\DB2ZOSProcessor
+     * @return DB2Processor|DB2ZOSProcessor
      */
-    protected function getDefaultPostProcessor()
+    protected function getDefaultPostProcessor(): DB2ZOSProcessor|DB2Processor
     {
         if ($this->config['driver'] === 'db2_zos_odbc') {
             $defaultProcessor = new DB2ZOSProcessor;
@@ -176,11 +169,11 @@ class DB2Connection extends Connection
     /**
      * Bind values to their parameters in the given statement.
      *
-     * @param  \PDOStatement  $statement
+     * @param  PDOStatement  $statement
      * @param  array  $bindings
      * @return void
      */
-    public function bindValues($statement, $bindings)
+    public function bindValues($statement, $bindings): void
     {
         foreach ($bindings as $key => $value) {
             $statement->bindValue(
@@ -193,7 +186,7 @@ class DB2Connection extends Connection
         }
     }
 
-    protected function handleQueryException(QueryException $e, $query, $bindings, \Closure $callback)
+    protected function handleQueryException(QueryException $e, $query, $bindings, Closure $callback)
     {
         $e = new TranslatedQueryException($e->getConnectionName(), $e->getSql(), $e->getBindings(), $e, $this->config);
         return parent::handleQueryException($e, $query, $bindings, $callback);
