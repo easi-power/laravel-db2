@@ -2,14 +2,11 @@
 
 namespace Easi\DB2;
 
-use Illuminate\Foundation\Application as LaravelApplication;
-use Laravel\Lumen\Application as LumenApplication;
 use Easi\DB2\Database\DB2Connection;
 use Easi\DB2\Database\Connectors\ODBCConnector;
 use Easi\DB2\Database\Connectors\IBMConnector;
 use Easi\DB2\Database\Connectors\ODBCZOSConnector;
 use Easi\DB2\Queue\DB2Connector;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Support\ServiceProvider;
 
@@ -25,29 +22,17 @@ class DB2ServiceProvider extends ServiceProvider
      *
      * @var bool
      */
-    protected $defer = false;
+    protected bool $defer = false;
 
     /**
      * Bootstrap the application events.
      *
      * @return void
      */
-    public function boot()
+    public function boot(): void
     {
         $configPath = __DIR__ . '/config/db2.php';
         $this->publishes([$configPath => $this->getConfigPath()], 'config');
-
-        Builder::macro('withExpression', function (string $name, Builder $subquery): Builder {
-            if (!isset($this->expressions)) {
-                $this->expressions = [];
-                $this->bindings = array_merge(['expressions' => []], $this->bindings);
-            }
-            $this->expressions[$name] = $subquery;
-            foreach ($subquery->getBindings() as $binding) {
-                $this->bindings['expressions'][] = $binding;
-            }
-            return $this;
-        });
     }
 
     /**
@@ -55,7 +40,7 @@ class DB2ServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function register()
+    public function register(): void
     {
         // get the configs
         $conns = is_array(config('db2.connections')) ? config('db2.connections') : [];
@@ -65,7 +50,7 @@ class DB2ServiceProvider extends ServiceProvider
 
         // Extend the connections with pdo_odbc and pdo_ibm drivers
         foreach (config('database.connections') as $conn => $config) {
-            // Only use configurations that feature a "odbc", "ibm" or "odbczos" driver
+            // Only use configurations that feature an "odbc", "ibm" or "odbczos" driver
             if (!isset($config['driver']) || !in_array($config['driver'], [
                     'db2_ibmi_odbc',
                     'db2_ibmi_ibm',
@@ -79,21 +64,11 @@ class DB2ServiceProvider extends ServiceProvider
             // Create a connector
             $this->app['db']->extend($conn, function($config, $name) {
                 $config['name'] = $name;
-                switch ($config['driver']) {
-                    case 'db2_expressc_odbc':
-                    case 'db2_ibmi_odbc':
-                        $connector = new ODBCConnector();
-                        break;
-
-                    case 'db2_zos_odbc':
-                        $connector = new ODBCZOSConnector();
-                        break;
-
-                    case 'db2_ibmi_ibm':
-                    default:
-                        $connector = new IBMConnector();
-                        break;
-                }
+                $connector = match ($config['driver']) {
+                    'db2_expressc_odbc', 'db2_ibmi_odbc' => new ODBCConnector(),
+                    'db2_zos_odbc' => new ODBCZOSConnector(),
+                    default => new IBMConnector(),
+                };
 
                 $db2Connection = $connector->connect($config);
 
@@ -118,13 +93,9 @@ class DB2ServiceProvider extends ServiceProvider
      *
      * @return string
      */
-    protected function getConfigPath()
+    protected function getConfigPath(): string
     {
-        if ($this->app instanceof LaravelApplication) {
-            return config_path('db2.php');
-        } elseif ($this->app instanceof LumenApplication) {
-            return base_path('config/db2.php');
-        }
+        return config_path('db2.php');
     }
 
     /**
@@ -132,7 +103,7 @@ class DB2ServiceProvider extends ServiceProvider
      *
      * @return array
      */
-    public function provides()
+    public function provides(): array
     {
         return [];
     }

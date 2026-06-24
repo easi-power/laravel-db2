@@ -15,7 +15,7 @@ class TranslatedQueryException extends QueryException
         parent::__construct($connectionName, $sql, $bindings, $previous);
     }
 
-    protected function formatMessage($connectionName, $sql, $bindings, Throwable $previous)
+    protected function formatMessage($connectionName, $sql, $bindings, Throwable $previous): string
     {
         if(isset($this->config['from_encoding']) && $this->config['from_encoding'] && !is_null($previous->getMessage())) {
             $previousMessage = iconv($this->config['from_encoding'], 'utf-8', $previous->getMessage());

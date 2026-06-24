@@ -13,17 +13,17 @@ use Illuminate\Database\Query\Builder;
 class DB2Grammar extends Grammar
 {
     /**
-     * The format for database stored dates.
+     * The format for database-stored dates.
      *
      * @var string
      */
-    protected $dateFormat;
+    protected string $dateFormat;
 
     /**
      * Offset compatibility mode true triggers FETCH FIRST X ROWS and ROW_NUM behavior for older versions of DB2
      * @var bool
      */
-    protected $offsetCompatibilityMode = true;
+    protected bool $offsetCompatibilityMode = true;
 
     /**
      * Wrap a single string in keyword identifiers.
@@ -32,7 +32,7 @@ class DB2Grammar extends Grammar
      *
      * @return string
      */
-    protected function wrapValue($value)
+    protected function wrapValue($value): string
     {
         if ($value === '*') {
             return $value;
@@ -44,12 +44,12 @@ class DB2Grammar extends Grammar
     /**
      * Compile the "limit" portions of the query.
      *
-     * @param \Illuminate\Database\Query\Builder $query
+     * @param Builder $query
      * @param int                                $limit
      *
      * @return string
      */
-    protected function compileLimit(Builder $query, $limit)
+    protected function compileLimit(Builder $query, $limit): string
     {
         if($this->offsetCompatibilityMode){
             return "FETCH FIRST $limit ROWS ONLY";
@@ -60,11 +60,11 @@ class DB2Grammar extends Grammar
     /**
      * Compile a select query into SQL.
      *
-     * @param \Illuminate\Database\Query\Builder $query
+     * @param Builder $query
      *
      * @return string
      */
-    public function compileSelect(Builder $query)
+    public function compileSelect(Builder $query): string
     {
         if (!$this->offsetCompatibilityMode) {
             $sql = parent::compileSelect($query);
@@ -99,15 +99,15 @@ class DB2Grammar extends Grammar
     /**
      * Create a full ANSI offset clause for the query.
      *
-     * @param \Illuminate\Database\Query\Builder $query
-     * @param array                              $components
+     * @param Builder $query
+     * @param array $components
      *
      * @return string
      */
-    protected function compileAnsiOffset(Builder $query, $components)
+    protected function compileAnsiOffset(Builder $query, array $components): string
     {
         // An ORDER BY clause is required to make this offset query work, so if one does
-        // not exist we'll just create a dummy clause to trick the database and so it
+        // not exist, we'll just create a dummy clause to trick the database, and so it
         // does not complain about the queries for not having an "order by" clause.
         if (!isset($components['orders'])) {
             $components['orders'] = 'order by 1';
@@ -137,16 +137,16 @@ class DB2Grammar extends Grammar
 
         unset($components['orders']);
 
-        // Next we need to calculate the constraints that should be placed on the query
-        // to get the right offset and limit from our query but if there is no limit
-        // set we will just handle the offset only since that is all that matters.
+        // Next, we need to calculate the constraints that should be placed on the query
+        // to get the right offset and limit from our query. However, if there is no limit
+        // set, we will just handle the offset only since that is all that matters.
         $start = $query->offset + 1;
 
         $constraint = $this->compileRowConstraint($query);
 
         $sql = $this->concatenate($components);
 
-        // We are now ready to build the final SQL query so we'll create a common table
+        // We are now ready to build the final SQL query, so we'll create a common table
         // expression from the query and get the records with row numbers within our
         // given limit and offset value that we just put on as a query constraint.
         return $this->compileTableExpression($sql, $constraint);
@@ -160,7 +160,7 @@ class DB2Grammar extends Grammar
      *
      * @return string
      */
-    protected function compileOver($orderings, $columns)
+    protected function compileOver(string $orderings, $columns): string
     {
         return "{$columns} row_number() over ({$orderings}) as row_num";
     }
@@ -170,7 +170,7 @@ class DB2Grammar extends Grammar
      *
      * @return string
      */
-    protected function compileRowConstraint($query)
+    protected function compileRowConstraint($query): string
     {
         $start = $query->offset + 1;
 
@@ -191,7 +191,7 @@ class DB2Grammar extends Grammar
      *
      * @return string
      */
-    protected function compileTableExpression($sql, $constraint)
+    protected function compileTableExpression(string $sql, string $constraint): string
     {
         return "select * from ({$sql}) as temp_table where row_num {$constraint}";
     }
@@ -199,12 +199,12 @@ class DB2Grammar extends Grammar
     /**
      * Compile the "offset" portions of the query.
      *
-     * @param \Illuminate\Database\Query\Builder $query
+     * @param Builder $query
      * @param int                                $offset
      *
      * @return string
      */
-    protected function compileOffset(Builder $query, $offset)
+    protected function compileOffset(Builder $query, $offset): string
     {
         if($this->offsetCompatibilityMode){
             return '';
@@ -215,10 +215,10 @@ class DB2Grammar extends Grammar
     /**
      * Compile an exists statement into SQL.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param Builder $query
      * @return string
      */
-    public function compileExists(Builder $query)
+    public function compileExists(Builder $query): string
     {
         $existsQuery = clone $query;
 
@@ -228,21 +228,21 @@ class DB2Grammar extends Grammar
     }
 
     /**
-     * Get the format for database stored dates.
+     * Get the format for database-stored dates.
      *
      * @return string
      */
-    public function getDateFormat()
+    public function getDateFormat(): string
     {
         return $this->dateFormat ?? parent::getDateFormat();
     }
 
     /**
-     * Set the format for database stored dates.
+     * Set the format for database-stored dates.
      *
      * @param $dateFormat
      */
-    public function setDateFormat($dateFormat)
+    public function setDateFormat($dateFormat): void
     {
         $this->dateFormat = $dateFormat;
     }
@@ -252,7 +252,7 @@ class DB2Grammar extends Grammar
      *
      * @param $bool
      */
-    public function setOffsetCompatibilityMode($bool)
+    public function setOffsetCompatibilityMode($bool): void
     {
         $this->offsetCompatibilityMode = $bool;
     }
@@ -263,7 +263,7 @@ class DB2Grammar extends Grammar
      * @param  string  $name
      * @return string
      */
-    public function compileSavepoint($name)
+    public function compileSavepoint($name): string
     {
         return 'SAVEPOINT '.$name.' ON ROLLBACK RETAIN CURSORS';
     }
@@ -271,15 +271,13 @@ class DB2Grammar extends Grammar
     /**
      * Compile an "upsert" statement into SQL.
      *
-     * @param  \Illuminate\Database\Query\Builder  $query
+     * @param Builder $query
      * @param  array  $values
      * @param  array  $uniqueBy
      * @param  array  $update
      * @return string
-     *
-     * @throws \RuntimeException
      */
-    public function compileUpsert(Builder $query, array $values, array $uniqueBy, array $update)
+    public function compileUpsert(Builder $query, array $values, array $uniqueBy, array $update): string
     {
         $table = $this->wrapTable($query->from);
 
@@ -322,8 +320,7 @@ class DB2Grammar extends Grammar
         {
             $sql .= "t.$col = x.$col,".PHP_EOL;
         }
-        $sql = substr($sql, 0, -3);
-        return $sql;
+        return substr($sql, 0, -3);
     }
 
     /**
@@ -332,7 +329,7 @@ class DB2Grammar extends Grammar
      * @param  array  $values
      * @return string
      */
-    public function parameterizeWithTypes(array $values)
+    public function parameterizeWithTypes(array $values): string
     {
         return implode(', ', array_map([$this, 'parameterWithType'], $values));
     }
@@ -343,7 +340,7 @@ class DB2Grammar extends Grammar
      * @param  mixed  $value
      * @return string
      */
-    public function parameterWithType($value)
+    public function parameterWithType(mixed $value): string
     {
         if($this->isExpression($value)) {
             return $this->getValue($value);

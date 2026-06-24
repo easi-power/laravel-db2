@@ -2,8 +2,10 @@
 
 namespace Easi\DB2\Database\Connectors;
 
+use Exception;
 use Illuminate\Database\Connectors\Connector;
 use Illuminate\Database\Connectors\ConnectorInterface;
+use PDO;
 
 /**
  * Class IBMConnector
@@ -15,9 +17,10 @@ class DB2Connector extends Connector implements ConnectorInterface
     /**
      * @param array $config
      *
-     * @return \PDO
+     * @return PDO
+     * @throws Exception
      */
-    public function connect(array $config)
+    public function connect(array $config): PDO
     {
         $dsn = $this->getDsn($config);
         $options = $this->getOptions($config);

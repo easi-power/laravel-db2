@@ -3,7 +3,7 @@
 namespace Easi\DB2\Database\Schema;
 
 use Illuminate\Database\Connection;
-use Illuminate\Database\Schema\Grammars\Grammar;
+use Illuminate\Support\Fluent;
 
 /**
  * Class Blueprint
@@ -18,14 +18,14 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
      *
      * @var int
      */
-    private $replyListSequenceNumber;
+    private int $replyListSequenceNumber;
 
     /**
      * Get the sequence number of reply list entries.
      *
      * @return int
      */
-    public function getReplyListSequenceNumber()
+    public function getReplyListSequenceNumber(): int
     {
         return $this->replyListSequenceNumber;
     }
@@ -34,9 +34,9 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
      * Set the sequence number of reply list entries.
      *
      * @param int $replyListSequenceNumber
-     * @return void
+     * @return int
      */
-    public function setReplyListSequenceNumber(int $replyListSequenceNumber)
+    public function setReplyListSequenceNumber(int $replyListSequenceNumber): int
     {
         return $this->replyListSequenceNumber = $replyListSequenceNumber;
     }
@@ -44,11 +44,9 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
     /**
      * Get the raw SQL statements for the blueprint.
      *
-     * @param  \Illuminate\Database\Connection  $connection
-     * @param  \Illuminate\Database\Schema\Grammars\Grammar  $grammar
      * @return array
      */
-    public function toSql()
+    public function toSql(): array
     {
         $this->addReplyListEntryCommands($this->connection);
 
@@ -58,7 +56,7 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
     /**
      * Add the commands that are necessary to DROP and Rename statements on IBMi.
      *
-     * @param  \Illuminate\Database\Connection  $connection
+     * @param Connection $connection
      * @return void
      */
     protected function addReplyListEntryCommands(Connection $connection): void
@@ -86,9 +84,9 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
     /**
      * Specify a system name for the table.
      *
-     * @param  string $systemName
+     * @param string $systemName
      */
-    public function forSystemName($systemName)
+    public function forSystemName(string $systemName): void
     {
         $this->systemName = $systemName;
     }
@@ -96,11 +94,11 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
     /**
      * Specify a label for the table.
      *
-     * @param  string $label
+     * @param string $label
      *
-     * @return \Illuminate\Support\Fluent
+     * @return Fluent
      */
-    public function label($label)
+    public function label(string $label): Fluent
     {
         return $this->addCommand('label', compact('label'));
     }
@@ -114,9 +112,9 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
      * @param string $index
      * @param null $algorithm
      * @param null $operatorClass
-     * @return \Illuminate\Support\Fluent
+     * @return Fluent
      */
-    protected function indexCommand($type, $columns, $index, $algorithm = null, $operatorClass = null)
+    protected function indexCommand($type, $columns, $index, $algorithm = null, $operatorClass = null): Fluent
     {
         $columns = (array) $columns;
 
@@ -147,9 +145,9 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
      *
      * @param  string $column
      *
-     * @return \Illuminate\Support\Fluent
+     * @return Fluent
      */
-    public function boolean($column)
+    public function boolean($column): Fluent
     {
         $prefix = $this->table;
         // Aucune utilité d'avoir le nom du schéma dans le préfixe de la contrainte check pour le type booléen
@@ -165,18 +163,18 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
     /**
      * Create a new numeric column on the table.
      *
-     * @param  string $column
-     * @param  int $total
-     * @param  int $places
+     * @param string $column
+     * @param int $total
+     * @param int $places
      *
-     * @return \Illuminate\Support\Fluent
+     * @return Fluent
      */
-    public function numeric($column, $total = 8, $places = 2)
+    public function numeric(string $column, int $total = 8, int $places = 2): Fluent
     {
         return $this->addColumn('numeric', $column, compact('total', 'places'));
     }
 
-    public function synchro($index, $masterizable = false)
+    public function synchro($index, $masterizable = false): void
     {
 
         $this->string('id_sync', 20)
@@ -192,7 +190,7 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
     /**
      * @param string $index
      */
-    public function dropSynchro($index)
+    public function dropSynchro(string $index): void
     {
         $this->dropColumn('id_sync', 'hashcode');
         $this->dropIndex($index);

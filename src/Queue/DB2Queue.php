@@ -9,8 +9,10 @@ class DB2Queue extends DatabaseQueue
 
     /**
      * {@inheritdoc}
+     *
+     * @return bool
      */
-    public function getLockForPopping()
+    public function getLockForPopping(): bool
     {
         return true;
     }
