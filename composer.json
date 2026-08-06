@@ -31,7 +31,6 @@
         "role": "Developer"
     }
     ],
-    "version": "v14.0.0",
     "require": {
         "php": "^8.4",
         "illuminate/database": "^13.0",
