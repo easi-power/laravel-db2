@@ -2,11 +2,17 @@
 
 namespace Easi\DB2\Database\Schema\Grammars;
 
+use Easi\DB2\Database\DB2Connection;
+use Illuminate\Database\Schema\ColumnDefinition;
+use RuntimeException;
 use Illuminate\Database\Query\Expression;
 use Illuminate\Support\Fluent;
 use Illuminate\Database\Schema\Grammars\Grammar;
 use Illuminate\Database\Schema\Blueprint;
 
+/**
+ * @property DB2Connection $connection
+ */
 class DB2Grammar extends Grammar
 {
     /**
@@ -52,15 +58,19 @@ class DB2Grammar extends Grammar
     }
 
     /**
-     * Compile the query to determine the list of tables.
+     * Compile the query to determine if a given table exists.
      *
-     * @param null $schema
-     * @param null $table
+     * @param  string|null  $schema
+     * @param  string  $table
      * @return string
      */
-    public function compileTableExists($schema = null, $table = null): string
+    public function compileTableExists($schema, $table): string
     {
-        return 'select * from information_schema.tables where table_schema = upper(?) and table_name = upper(?)';
+        return sprintf(
+            'select count(*) as "exists" from information_schema.tables where table_schema = upper(%s) and table_name = upper(%s)',
+            $this->quoteString($schema ?? $this->connection->getDefaultSchema()),
+            $this->quoteString($table)
+        );
     }
 
     /**
@@ -76,7 +86,7 @@ class DB2Grammar extends Grammar
     /**
      * Compile a create table command.
      *
-     * @param Blueprint $blueprint
+     * @param \Easi\DB2\Database\Schema\Blueprint $blueprint
      * @param Fluent $command
      * @return string
      */
@@ -85,7 +95,7 @@ class DB2Grammar extends Grammar
         $columns = implode(', ', $this->getColumns($blueprint));
         $sql = 'create table ' . $this->wrapTable($blueprint);
 
-        if (isset($blueprint->systemName)) {
+        if ($blueprint->systemName !== null) {
             $sql .= ' for system name ' . $blueprint->systemName;
         }
 
@@ -118,17 +128,29 @@ class DB2Grammar extends Grammar
         $columns = [];
 
         foreach ($blueprint->getColumns() as $column) {
-            // Each of the column types have their own compiler functions which are tasked
-            // with turning the column definition into its SQL format for this platform
-            // used by the connection. The column's modifiers are compiled and added.
-            //$sql = $this->wrap($column).' '.$this->getType($column);
-            $sql = $this->addPreModifiers($this->wrap($column), $blueprint, $column);
-            $sql .= ' ' . $this->getType($column);
-
-            $columns[] = $this->addModifiers($sql, $blueprint, $column);
+            $columns[] = $this->getColumn($blueprint, $column);
         }
 
         return $columns;
+    }
+
+    /**
+     * Compile a single column definition, including its modifiers.
+     *
+     * @param Blueprint $blueprint
+     * @param ColumnDefinition $column
+     *
+     * @return string
+     */
+    protected function getColumn(Blueprint $blueprint, $column): string
+    {
+        // Each of the column types have their own compiler functions which are tasked
+        // with turning the column definition into its SQL format for this platform
+        // used by the connection. The column's modifiers are compiled and added.
+        $sql = $this->addPreModifiers($this->wrap($column), $blueprint, $column);
+        $sql .= ' ' . $this->getType($column);
+
+        return $this->addModifiers($sql, $blueprint, $column);
     }
 
     /**
@@ -162,14 +184,9 @@ class DB2Grammar extends Grammar
     public function compileAdd(Blueprint $blueprint, Fluent $command): array|string
     {
         $table = $this->wrapTable($blueprint);
-        $columns = $this->prefixArray('add', $this->getColumns($blueprint));
-        $statements = [];
+        $column = $this->getColumn($blueprint, $command->column);
 
-        foreach ($columns as $column) {
-            $statements[] = 'alter table ' . $table . ' ' . $column;
-        }
-
-        return $statements;
+        return 'alter table ' . $table . ' add column ' . $column;
     }
 
     /**
@@ -313,10 +330,13 @@ class DB2Grammar extends Grammar
      * @param Fluent $command
      *
      * @return string
+     * @throws RuntimeException
      */
     public function compileDropIfExists(Blueprint $blueprint, Fluent $command): string
     {
-        return 'drop table if exists ' . $this->wrapTable($blueprint);
+        throw new RuntimeException(
+            'DROP TABLE IF EXISTS is not supported by DB2 for i / z/OS. Use compileDrop() or check table existence manually.'
+        );
     }
 
     /**
@@ -332,7 +352,7 @@ class DB2Grammar extends Grammar
         $columns = $this->prefixArray('drop', $this->wrapArray($command->columns));
         $table = $this->wrapTable($blueprint);
 
-        return 'alter table ' . $table . ' ' . implode(', ', $columns);
+        return 'alter table ' . $table . ' ' . implode(' ', $columns);
     }
 
     /**
@@ -387,9 +407,10 @@ class DB2Grammar extends Grammar
 
         if (count($schemaTable) > 1) {
             $command->index = str_replace($schemaTable[0] . "_", "", $command->index);
+            return "drop index {$schemaTable[0]}.{$command->index}";
         }
 
-        return "alter table {$table} drop index {$command->index}";
+        return "drop index {$command->index}";
     }
 
     /**
@@ -791,12 +812,12 @@ class DB2Grammar extends Grammar
      */
     protected function compileIncrement(Fluent $column): string
     {
-        $type = $column->type === 'bigInteger'
+        $type = in_array($column->type, ['bigInteger', 'bigIncrements', 'unsignedBigInteger'], true)
             ? 'BIGINT'
             : 'INTEGER';
 
         return sprintf(
-            '%s GENERATED BY DEFAULT AS IDENTITY (START WITH 1, INCREMENT BY 1, NO CYCLE)',
+            '%s GENERATED BY DEFAULT AS IDENTITY (START WITH 1, INCREMENT BY 1, NO MINVALUE NO MAXVALUE NO CYCLE)',
             $type
         );
     }
@@ -976,6 +997,19 @@ EOT;
         $command->command = 'CHGJOB INQMSGRPY(*SYSRPYL)';
 
         return $this->compileExecuteCommand($blueprint, $command);
+    }
+
+    /**
+     * Compile a rename column command.
+     *
+     * @param Blueprint $blueprint
+     * @param Fluent $command
+     *
+     * @throws RuntimeException This driver does not support this operation
+     */
+    public function compileRenameColumn(Blueprint $blueprint, Fluent $command): void
+    {
+        throw new RuntimeException('This database driver does not support renaming columns.');
     }
 
     /**

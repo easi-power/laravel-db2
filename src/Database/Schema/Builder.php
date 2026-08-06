@@ -3,6 +3,8 @@
 namespace Easi\DB2\Database\Schema;
 
 use Closure;
+use Easi\DB2\Database\DB2Connection;
+use Easi\DB2\Database\Schema\Grammars\DB2Grammar;
 use Illuminate\Database\Schema\Blueprint;
 use LogicException;
 
@@ -10,35 +12,12 @@ use LogicException;
  * Class Builder
  *
  * @package Easi\DB2\Database\Schema
+ *
+ * @property DB2Connection $connection
+ * @property DB2Grammar $grammar
  */
 class Builder extends \Illuminate\Database\Schema\Builder
 {
-    /**
-     * Determine if the given table exists.
-     *
-     * @param string $table
-     *
-     * @return bool
-     */
-    public function hasTable($table): bool
-    {
-        $sql = $this->grammar->compileTableExists();
-        $schemaTable = explode(".", $table);
-
-        if (count($schemaTable) > 1) {
-            $schema = $schemaTable[0];
-            $table = $this->connection->getTablePrefix() . $schemaTable[1];
-        } else {
-            $schema = $this->connection->getDefaultSchema();
-            $table = $this->connection->getTablePrefix() . $table;
-        }
-
-        return count($this->connection->select($sql, [
-                $schema,
-                $table,
-            ])) > 0;
-    }
-
     /**
      * Get the column listing for a given table.
      *
@@ -82,7 +61,7 @@ class Builder extends \Illuminate\Database\Schema\Builder
             $this->connection->setCurrentSchema($schemaTable[0]);
         }
 
-        $blueprint->build($this->connection, $this->grammar);
+        $blueprint->build();
         $this->connection->resetCurrentSchema();
     }
 

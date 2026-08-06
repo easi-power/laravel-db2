@@ -5,8 +5,11 @@ namespace Easi\DB2\Database;
 use Closure;
 use Easi\DB2\Exceptions\TranslatedQueryException;
 use Illuminate\Database\Grammar;
-use Illuminate\Database\QueryException;
+use Easi\DB2\Exceptions\TranslatedUniqueConstraintViolationException;
+use Exception;
 use PDO;
+use Throwable;
+use Illuminate\Support\Str;
 
 use Illuminate\Database\Connection;
 
@@ -39,10 +42,18 @@ class DB2Connection extends Connection
      */
     protected string $currentSchema;
 
-    public function __construct(PDO $pdo, $database = '', $tablePrefix = '', array $config = [])
+    public function __construct(PDO|Closure $pdo, $database = '', $tablePrefix = '', array $config = [])
     {
         parent::__construct($pdo, $database, $tablePrefix, $config);
         $this->currentSchema = $this->defaultSchema = strtoupper($config['schema'] ?? null);
+
+        foreach ((array) ($config['startup_command'] ?? []) as $command) {
+            $this->executeCommand($command);
+        }
+
+        foreach ((array) ($config['startup_statement'] ?? []) as $statement) {
+            $this->statement($statement);
+        }
     }
 
     /**
@@ -93,6 +104,25 @@ class DB2Connection extends Connection
         $this->statement('CALL QSYS2.QCMDEXC(?)', [$command]);
     }
 
+    public function escape($value, $binary = false): string
+    {
+        if (!$binary && is_string($value) && !empty($this->config['from_encoding'])) {
+            $value = iconv('utf-8', $this->config['from_encoding'], $value);
+        }
+
+        return parent::escape($value, $binary);
+    }
+
+    protected function escapeBinary($value): string
+    {
+        return "X'" . strtoupper(bin2hex($value)) . "'";
+    }
+
+    protected function escapeString($value): string
+    {
+        return "'" . str_replace("'", "''", $value) . "'";
+    }
+
     /**
      * Get a schema builder instance for the connection.
      *
@@ -105,6 +135,29 @@ class DB2Connection extends Connection
         }
 
         return new Builder($this);
+    }
+
+    protected function isUniqueConstraintError(Exception $exception): bool
+    {
+        return stripos($exception->getMessage(), "SQL0803") !== false;
+    }
+
+    /**
+     * Determine if the given exception was caused by a lock-conflict error.
+     *
+     * @param Throwable $e
+     * @return bool
+     */
+    protected function causedByConcurrencyError(Throwable $e): bool
+    {
+        if (parent::causedByConcurrencyError($e)) {
+            return true;
+        }
+
+        return Str::contains($e->getMessage(), [
+            'SQL0913',
+            'Row or object',
+        ]);
     }
 
     /**
@@ -186,9 +239,28 @@ class DB2Connection extends Connection
         }
     }
 
-    protected function handleQueryException(QueryException $e, $query, $bindings, Closure $callback)
+    protected function runQueryCallback($query, $bindings, Closure $callback): mixed
     {
-        $e = new TranslatedQueryException($e->getConnectionName(), $e->getSql(), $e->getBindings(), $e, $this->config);
-        return parent::handleQueryException($e, $query, $bindings, $callback);
+        // To execute the statement, we'll simply call the callback, which will actually
+        // run the SQL against the PDO connection. Then we can calculate the time it
+        // took to execute and log the query SQL, bindings and time in our memory.
+        try {
+            return $callback($query, $bindings);
+        }
+
+        // If an exception occurs when attempting to run a query, we'll format the error
+        // message to include the bindings with SQL, which will make this exception a
+        // lot more helpful to the developer instead of just the database's errors.
+        catch (Exception $e) {
+            if ($this->isUniqueConstraintError($e)) {
+                throw new TranslatedUniqueConstraintViolationException(
+                    $this->getName(), $query, $this->prepareBindings($bindings), $e, $this->getQueryGrammar(), $this->config
+                );
+            }
+
+            throw new TranslatedQueryException(
+                $this->getName(), $query, $this->prepareBindings($bindings), $e, $this->getQueryGrammar(), $this->config
+            );
+        }
     }
 }

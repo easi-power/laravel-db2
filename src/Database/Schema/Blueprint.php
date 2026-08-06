@@ -12,8 +12,10 @@ use Illuminate\Support\Fluent;
  */
 class Blueprint extends \Illuminate\Database\Schema\Blueprint
 {
+    public ?string $systemName;
 
-   /**
+
+    /**
      * The sequence number of reply list entries.
      *
      * @var int
@@ -48,7 +50,9 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
      */
     public function toSql(): array
     {
-        $this->addReplyListEntryCommands($this->connection);
+        if ($this->connection->getConfig('allow_destructive_ddl_with_reply_list')) {
+            $this->addReplyListEntryCommands($this->connection);
+        }
 
         return parent::toSql();
     }
@@ -101,6 +105,22 @@ class Blueprint extends \Illuminate\Database\Schema\Blueprint
     public function label(string $label): Fluent
     {
         return $this->addCommand('label', compact('label'));
+    }
+
+    /**
+     * Add a new column to the blueprint.
+     *
+     * @param  string $type
+     * @param  string $name
+     * @param  array $parameters
+     *
+     * @return \Illuminate\Database\Schema\ColumnDefinition
+     */
+    public function addColumn($type, $name, array $parameters = []): \Illuminate\Database\Schema\ColumnDefinition
+    {
+        return $this->addColumnDefinition(new ColumnDefinition(
+            array_merge(compact('type', 'name'), $parameters)
+        ));
     }
 
     /**
