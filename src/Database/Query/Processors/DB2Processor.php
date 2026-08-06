@@ -2,6 +2,7 @@
 
 namespace Easi\DB2\Database\Query\Processors;
 
+use Easi\DB2\Support\ConnectionGuard;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\Processors\Processor;
 use Easi\DB2\Database\Query\Grammars\DB2Grammar;
@@ -28,14 +29,14 @@ class DB2Processor extends Processor
      * @param array $values
      * @param string|array|null $sequence
      *
-     * @return int|array
+     * @return int|string|array
      */
-    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null): int|array
+    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null): int|string|array
     {
         $sequenceStr = $sequence ?: 'id';
 
         if (is_array($sequence)) {
-            $grammar = new DB2Grammar($query->getConnection());
+            $grammar = new DB2Grammar(ConnectionGuard::assertConcrete($query->getConnection()));
             $sequenceStr = $grammar->columnize($sequence);
         }
 
@@ -45,18 +46,32 @@ class DB2Processor extends Processor
         $results = $query->getConnection()
                          ->select($finalSql, $values);
 
+        $result = (array) $results[0];
+
         if (is_array($sequence)) {
-            return array_values((array) $results[0]);
-        } else {
-            $result = (array) $results[0];
-            if (isset($result[$sequenceStr])) {
-                $id = $result[$sequenceStr];
-            } else {
-                $id = $result[strtoupper($sequenceStr)];
+            $ids = [];
+            foreach ($sequence as $column) {
+                $ids[$column] = $this->resolveColumn($result, $column);
             }
+
+            return $ids;
+        } else {
+            $id = $this->resolveColumn($result, $sequenceStr);
 
             return is_numeric($id) ? (int) $id : $id;
         }
+    }
+
+    /**
+     * Look up a column in a result row, falling back to its uppercased name.
+     *
+     * @param array $result
+     * @param string $column
+     * @return mixed
+     */
+    private function resolveColumn(array $result, string $column): mixed
+    {
+        return $result[$column] ?? $result[strtoupper($column)];
     }
 
     /**
@@ -68,17 +83,26 @@ class DB2Processor extends Processor
      */
     public function processSelect(Builder $query, $results): array
     {
-        foreach ($results as $index=>$result)
-        {
-            $results[$index] = array_map(function ($el) {
-                $el = is_string($el) ? trim($el) : $el;
-                if(isset($this->config['from_encoding']) && !is_null($el)) {
-                    return iconv($this->config['from_encoding'], 'utf-8', $el);
-                } else {
+        return array_map(function ($row) {
+            $columns = array_map(function ($el) {
+                if (! is_string($el)) {
                     return $el;
                 }
-            }, (array)$result);
-        }
-        return $results;
+
+                $el = trim($el);
+
+                if (isset($this->config['from_encoding'])) {
+                    return iconv($this->config['from_encoding'], 'utf-8', $el);
+                }
+
+                return $el;
+            }, (array) $row);
+
+            // Preserve the shape PDO handed us. The connection's fetch mode isn't
+            // fixed (callers can pass a $fetchUsing mode to select()), so rows may
+            // arrive as objects or arrays; the (array) cast above — needed to map
+            // over the columns — is undone only when the original row was an object.
+            return is_object($row) ? (object) $columns : $columns;
+        }, $results);
     }
 }

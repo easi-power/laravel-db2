@@ -12,8 +12,15 @@ use PDO;
  *
  * @package Easi\DB2\Database\Connectors
  */
-class DB2Connector extends Connector implements ConnectorInterface
+abstract class DB2Connector extends Connector implements ConnectorInterface
 {
+    /**
+     * @param array $config
+     *
+     * @return string
+     */
+    abstract protected function getDsn(array $config): string;
+
     /**
      * @param array $config
      *

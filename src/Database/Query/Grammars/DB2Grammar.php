@@ -58,6 +58,25 @@ class DB2Grammar extends Grammar
     }
 
     /**
+     * Compile the lock into SQL.
+     *
+     * @param Builder $query
+     * @param bool|string $value
+     *
+     * @return string
+     */
+    protected function compileLock(Builder $query, $value): string
+    {
+        if (is_string($value)) {
+            return $value;
+        }
+
+        return $value
+            ? 'with rs use and keep exclusive locks'
+            : 'with rs';
+    }
+
+    /**
      * Compile a select query into SQL.
      *
      * @param Builder $query

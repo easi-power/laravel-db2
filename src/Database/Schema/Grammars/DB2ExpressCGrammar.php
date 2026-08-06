@@ -5,15 +5,19 @@ namespace Easi\DB2\Database\Schema\Grammars;
 class DB2ExpressCGrammar extends DB2Grammar
 {
     /**
-     * Compile the query to determine the list of tables.
+     * Compile the query to determine if a given table exists.
      *
-     * @param null $schema
-     * @param null $table
+     * @param  string|null  $schema
+     * @param  string  $table
      * @return string
      */
-    public function compileTableExists($schema = null, $table = null): string
+    public function compileTableExists($schema, $table): string
     {
-        return 'select * from syspublic.all_tables where table_schema = upper(?) and table_name = upper(?)';
+        return sprintf(
+            'select count(*) as "exists" from syspublic.all_tables where table_schema = upper(%s) and table_name = upper(%s)',
+            $this->quoteString($schema ?? $this->connection->getDefaultSchema()),
+            $this->quoteString($table)
+        );
     }
 
     /**

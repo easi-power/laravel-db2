@@ -31,6 +31,7 @@
         "role": "Developer"
     }
     ],
+    "version": "v14.0.0",
     "require": {
         "php": "^8.4",
         "illuminate/database": "^13.0",
@@ -40,18 +41,31 @@
         "ext-iconv": "*"
     },
     "require-dev": {
-        "laravel/framework": "^13.0"
+        "pestphp/pest": "^4.7"
     },
     "autoload": {
     "psr-4": {
         "Easi\\DB2\\": "src/"
     }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
     "extra": {
         "laravel": {
             "providers": [
                 "Easi\\DB2\\DB2ServiceProvider"
             ]
+        }
+    },
+    "scripts": {
+        "test": "./vendor/bin/pest --display-warnings"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
         }
     }
 }

@@ -97,14 +97,4 @@ class DB2ServiceProvider extends ServiceProvider
     {
         return config_path('db2.php');
     }
-
-    /**
-     * Get the services provided by the provider.
-     *
-     * @return array
-     */
-    public function provides(): array
-    {
-        return [];
-    }
 }

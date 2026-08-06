@@ -21,9 +21,9 @@ class DB2ZOSProcessor extends Processor
      * @param array $values
      * @param string|array|null $sequence
      *
-     * @return int|array
+     * @return int|string|array
      */
-    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null): int|array
+    public function processInsertGetId(Builder $query, $sql, $values, $sequence = null): int|string|array
     {
         $sequenceStr = $sequence ?: 'id';
 
@@ -38,13 +38,31 @@ class DB2ZOSProcessor extends Processor
         $results = $query->getConnection()
                          ->select($finalSql, $values);
 
+        $result = (array) $results[0];
+
         if (is_array($sequence)) {
-            return array_values((array) $results[0]);
+            $ids = [];
+            foreach ($sequence as $column) {
+                $ids[$column] = $this->resolveColumn($result, $column);
+            }
+
+            return $ids;
         } else {
-            $result = (array) $results[0];
-            $id = $result[strtolower($sequenceStr)];
+            $id = $this->resolveColumn($result, $sequenceStr);
 
             return is_numeric($id) ? (int) $id : $id;
         }
+    }
+
+    /**
+     * Look up a column in a result row, falling back to its lowercased name.
+     *
+     * @param array $result
+     * @param string $column
+     * @return mixed
+     */
+    private function resolveColumn(array $result, string $column): mixed
+    {
+        return $result[$column] ?? $result[strtolower($column)];
     }
 }
