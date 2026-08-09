@@ -300,17 +300,14 @@ class DB2Grammar extends Grammar
     {
         $table = $this->wrapTable($query->from);
 
-        $valuesString = 'VALUES';
         $keys = collect($values[0])->keys();
         $keysString = "(".$keys->implode(", ").")";
+        $tuples = [];
         foreach ($values as $value)
         {
-            $valueString = $this->parameterizeWithTypes($value);
-            $valueString = "($valueString),".PHP_EOL;
-            $valuesString .= $valueString;
+            $tuples[] = "(".$this->parameterizeWithTypes($value).")";
         }
-        // Remove the trailing "," and newline
-        $valuesString = substr($valuesString, 0, -3);
+        $valuesString = "VALUES".implode(",".PHP_EOL, $tuples);
 
         // Start statement
         $sql = "MERGE INTO $table as t USING ($valuesString) as x $keysString".PHP_EOL;
