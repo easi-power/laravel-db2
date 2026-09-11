@@ -8,6 +8,7 @@ namespace Easi\DB2\Database\Schema;
  * @method $this startWith(int $value) Set the starting value of an identity column (IBM i)
  * @method $this generated(bool|string $expression = true) Mark the column as a generated column, always or by expression (IBM i)
  * @method $this implicitlyHidden() Hide the column from "SELECT *" (IBM i)
+ * @method $this withoutPrimaryKey() Keep an identity column from becoming the primary key (IBM i)
  */
 class ColumnDefinition extends \Illuminate\Database\Schema\ColumnDefinition
 {
