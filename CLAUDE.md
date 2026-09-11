@@ -4,13 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`easi-power/laravel-db2` is a Composer package that adds DB2 connectivity to Laravel by extending Illuminate's database component. It is a library, not an application: there is no app to run, no test suite, no linter, and no CI config in the repo. Consumers install it via Composer and Laravel auto-discovers `Easi\DB2\DB2ServiceProvider`.
+`easi-power/laravel-db2` is a Composer package that adds DB2 connectivity to Laravel by extending Illuminate's database component. It is a library, not an application: there is no app to run, no linter, and no CI config in the repo. Consumers install it via Composer and Laravel auto-discovers `Easi\DB2\DB2ServiceProvider`.
 
 Requires PHP `^8.4` and `illuminate/database ^13.0` (Laravel 13). Autoload: `Easi\DB2\` → `src/`.
 
 ## Commands
 
-- `composer install` / `composer update` — install dependencies (the only routine command).
+- `composer install` / `composer update` — install dependencies.
+- `composer test` — run the Pest suite (`./vendor/bin/pest --display-warnings`).
+
+## Testing
+
+Pest, in `tests/Unit`. There is no database: tests drive the grammars/processors directly or
+through a `DB2Connection` built over `tests/Unit/Helpers/FakePDO`, and assert on compiled SQL.
+
+- **Use generic, obviously-fictional table/column names in tests** (`products`, `sku`, `orders`)
+  — this is a shared, public package.
 
 Note: `composer.lock` is committed but `composer.json` and the lock are sometimes out of sync during dependency bumps — check git status before assuming the lock is current.
 

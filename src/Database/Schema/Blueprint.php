@@ -4,6 +4,7 @@ namespace Easi\DB2\Database\Schema;
 
 use Illuminate\Database\Connection;
 use Illuminate\Support\Fluent;
+use LogicException;
 
 /**
  * Class Blueprint
@@ -12,23 +13,34 @@ use Illuminate\Support\Fluent;
  */
 class Blueprint extends \Illuminate\Database\Schema\Blueprint
 {
-    public ?string $systemName;
+    /**
+     * The system name (short name) for the table, if one was specified.
+     */
+    public ?string $systemName = null;
 
 
     /**
-     * The sequence number of reply list entries.
+     * The sequence number of reply list entries, once one has been reserved.
      *
-     * @var int
+     * @var int|null
      */
-    private int $replyListSequenceNumber;
+    private ?int $replyListSequenceNumber = null;
 
     /**
      * Get the sequence number of reply list entries.
      *
      * @return int
+     *
+     * @throws \LogicException when no sequence number has been reserved yet.
      */
     public function getReplyListSequenceNumber(): int
     {
+        if ($this->replyListSequenceNumber === null) {
+            throw new LogicException(
+                'No reply list sequence number has been reserved; addReplyListEntry must be compiled first.'
+            );
+        }
+
         return $this->replyListSequenceNumber;
     }
 

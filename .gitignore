@@ -2,3 +2,4 @@
 .vscode
 vendor/
 .mcp.json
+.claude/settings.local.json

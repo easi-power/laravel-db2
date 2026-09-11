@@ -1,0 +1,11 @@
+# Table and schema names the test suite is allowed to use.
+#
+# Keep entries obviously fictional and generic. One name per line.
+
+products
+product_stock
+orders
+order_lines
+customers
+users
+inventory
