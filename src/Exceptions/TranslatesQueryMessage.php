@@ -17,7 +17,8 @@ trait TranslatesQueryMessage
         parent::__construct($connectionName, $sql, $bindings, $previous);
     }
 
-    protected function formatMessage($connectionName, $sql, $bindings, Throwable $previous): string
+    // $maskBindings arrived in a Laravel 13 minor; declaring it keeps the override compatible on both sides of it.
+    protected function formatMessage($connectionName, $sql, $bindings, Throwable $previous, $maskBindings = false): string
     {
         if (isset($this->config['from_encoding']) && $this->config['from_encoding'] && !is_null($previous->getMessage())) {
             $previousMessage = iconv($this->config['from_encoding'], 'utf-8', $previous->getMessage());
@@ -25,7 +26,7 @@ trait TranslatesQueryMessage
             $previousMessage = $previous->getMessage();
         }
 
-        $displaySql = $this->grammar->substituteBindingsIntoRawSql($sql, $bindings);
+        $displaySql = $maskBindings ? $sql : $this->grammar->substituteBindingsIntoRawSql($sql, $bindings);
 
         return $previousMessage.' (Connection: '.$connectionName.', SQL: '.$displaySql.')';
     }

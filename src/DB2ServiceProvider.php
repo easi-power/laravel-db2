@@ -6,6 +6,9 @@ use Easi\DB2\Database\DB2Connection;
 use Easi\DB2\Database\Connectors\ODBCConnector;
 use Easi\DB2\Database\Connectors\IBMConnector;
 use Easi\DB2\Database\Connectors\ODBCZOSConnector;
+use Easi\DB2\Database\Gateway\GatewayConnection;
+use Easi\DB2\Database\Gateway\Transport\FakeTransport;
+use Easi\DB2\Database\Gateway\Transport\SocketTransport;
 use Easi\DB2\Queue\DB2Connector;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Support\ServiceProvider;
@@ -75,6 +78,15 @@ class DB2ServiceProvider extends ServiceProvider
                 return new DB2Connection($db2Connection, $config["database"], $config["prefix"], $config);
             });
         }
+
+        // Registered by driver, not by connection name, so a connection switched to it at runtime resolves too.
+        $this->app['db']->extend('vms_rms_gateway', function (array $config, string $name) {
+            $transport = ($config['transport'] ?? 'socket') === 'fake'
+                ? new FakeTransport()
+                : new SocketTransport($config['host'], (int) $config['port'], (float) ($config['timeout'] ?? 10));
+
+            return new GatewayConnection($transport, array_merge($config, ['name' => $name]));
+        });
 
         $this->app->extend(
             'queue',

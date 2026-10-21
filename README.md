@@ -150,6 +150,11 @@ the same way as above
 Simply set database connection driver value to ``'db2_odbc'`` in ``config/queue.php`` file:
 
 
+### OpenVMS RMS gateway
+
+The `vms_rms_gateway` driver reads and writes OpenVMS RMS indexed files through a COBOL gateway on
+the VMS node instead of SQL. Configuration and the wire protocol: [docs/vms-rms-gateway.md](docs/vms-rms-gateway.md).
+
 ## Usage
 
 Consult the [Laravel framework documentation](https://laravel.com/docs).
