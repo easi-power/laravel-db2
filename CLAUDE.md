@@ -55,3 +55,7 @@ When adding support for a new driver variant, you must touch all of: the driver-
 ## Configuration reference
 
 `src/config/db2.php` is the publishable config (`php artisan vendor:publish`). The README documents every connection key — driver names, `driverName` (the ODBC driver string), `schema`, `date_format`, `from_encoding`, the large `odbc_keywords` map, and PDO `options`. Consult the README before changing config-shape assumptions.
+
+## VMS RMS gateway (`src/Database/Gateway/`)
+
+A separate driver, `vms_rms_gateway`, unrelated to DB2: `GatewayGrammar` compiles queries to a JSON descriptor instead of SQL, `GatewayCodec` frames it, and a transport (`SocketTransport`, or `FakeTransport` in tests) sends it to a COBOL program on OpenVMS. It is registered by driver name in `DB2ServiceProvider`, not through the DB2 allowlist. `docs/vms-rms-gateway.md` is the wire protocol and `FakeTransport` its reference implementation — change them together.
