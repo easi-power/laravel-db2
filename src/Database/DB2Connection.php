@@ -9,7 +9,6 @@ use Easi\DB2\Exceptions\TranslatedUniqueConstraintViolationException;
 use Exception;
 use PDO;
 use Throwable;
-use Illuminate\Support\Str;
 
 use Illuminate\Database\Connection;
 
@@ -150,14 +149,8 @@ class DB2Connection extends Connection
      */
     protected function causedByConcurrencyError(Throwable $e): bool
     {
-        if (parent::causedByConcurrencyError($e)) {
-            return true;
-        }
-
-        return Str::contains($e->getMessage(), [
-            'SQL0913',
-            'Row or object',
-        ]);
+        return parent::causedByConcurrencyError($e)
+            || (new DB2ConcurrencyErrorDetector)->causedByConcurrencyError($e);
     }
 
     /**

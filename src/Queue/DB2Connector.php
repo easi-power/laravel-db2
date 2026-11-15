@@ -23,7 +23,8 @@ class DB2Connector extends DatabaseConnector
             $connection,
             $config['table'],
             $config['queue'],
-            $config['retry_after'] ?? 60
+            $config['retry_after'] ?? 60,
+            $config['after_commit'] ?? null
         );
     }
 }
