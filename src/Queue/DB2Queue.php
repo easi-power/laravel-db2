@@ -2,7 +2,9 @@
 
 namespace Easi\DB2\Queue;
 
+use Easi\DB2\Database\DB2ConcurrencyErrorDetector;
 use Illuminate\Queue\DatabaseQueue;
+use Throwable;
 
 class DB2Queue extends DatabaseQueue
 {
@@ -22,6 +24,18 @@ class DB2Queue extends DatabaseQueue
     public function getLockForPopping(): string
     {
         return 'with rs use and keep exclusive locks skip locked data';
+    }
+
+    /**
+     * Determine if the given exception was caused by a concurrency error.
+     *
+     * pop() fails the job it was reserving unless the error is a concurrency error, so a
+     * DB2 lock conflict between two workers must count as one, or a valid job is failed.
+     */
+    protected function causedByConcurrencyError(Throwable $e): bool
+    {
+        return parent::causedByConcurrencyError($e)
+            || (new DB2ConcurrencyErrorDetector)->causedByConcurrencyError($e);
     }
 
 }

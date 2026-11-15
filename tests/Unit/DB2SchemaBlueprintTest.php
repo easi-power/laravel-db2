@@ -46,6 +46,50 @@ describe('compileCreate', function () {
     });
 });
 
+describe('text columns', function () {
+    // Two varchar(16369) columns alone exceed DB2's 32766-byte row limit (SQL0101).
+    it('compiles text and mediumText as clob so several fit in one table', function () {
+        $blueprint = new Blueprint(blueprintTestConnection(), 'products', function (Blueprint $table) {
+            $table->create();
+            $table->string('sku', 20);
+            $table->text('summary');
+            $table->text('notes');
+            $table->mediumText('details');
+        });
+
+        expect($blueprint->toSql())->toBe([
+            'create table products (sku varchar(20) not null, summary clob not null, notes clob not null, details clob not null)',
+        ]);
+    });
+
+    // The framework's own grammars ignore a length on text columns too.
+    it('ignores a length on text and mediumText', function () {
+        $blueprint = new Blueprint(blueprintTestConnection(), 'products', function (Blueprint $table) {
+            $table->create();
+            $table->text('summary')->length(500);
+            $table->mediumText('details')->length(2000);
+        });
+
+        expect($blueprint->toSql())->toBe([
+            'create table products (summary clob not null, details clob not null)',
+        ]);
+    });
+});
+
+describe('uuid columns', function () {
+    it('compiles uuid and foreignUuid as char(36)', function () {
+        $blueprint = new Blueprint(blueprintTestConnection(), 'orders', function (Blueprint $table) {
+            $table->create();
+            $table->uuid('id');
+            $table->foreignUuid('product_id');
+        });
+
+        expect($blueprint->toSql())->toBe([
+            'create table orders (id char(36) not null, product_id char(36) not null)',
+        ]);
+    });
+});
+
 describe('modifyIncrement', function () {
     it('makes a lone identity column the primary key', function () {
         $blueprint = new Blueprint(blueprintTestConnection(), 'products', function (Blueprint $table) {

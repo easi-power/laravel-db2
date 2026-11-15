@@ -20,16 +20,12 @@ class ODBCConnector extends DB2Connector
             'odbc:DRIVER=%s',
             'System=%s',
             'Database=%s',
-            'UserID=%s',
-            'Password=%s',
         ];
 
         $dsnConfig = [
             $config['driverName'],
             $config['host'],
             $config['database'],
-            $config['username'],
-            $config['password'],
         ];
 
         if (array_key_exists('odbc_keywords', $config)) {

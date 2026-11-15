@@ -263,6 +263,15 @@ class DB2Grammar extends Grammar
     }
 
     /**
+     * @inheritDoc
+     *
+     */
+    public function compileExistsColumn($sql): string
+    {
+        return '(select count(*) from (values (1)) as d(x) where exists('.$sql.'))';
+    }
+
+    /**
      * Get the format for database-stored dates.
      *
      * @return string
