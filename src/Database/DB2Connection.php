@@ -252,15 +252,33 @@ class DB2Connection extends Connection
         // message to include the bindings with SQL, which will make this exception a
         // lot more helpful to the developer instead of just the database's errors.
         catch (Exception $e) {
+            $arguments = [
+                $this->getName(),
+                $query,
+                $this->prepareBindings($bindings),
+                $e,
+                $this->getQueryGrammar(),
+                $this->getConnectionDetails(),
+                $this->latestReadWriteTypeUsed(),
+                (bool) $this->getConfig('mask_bindings_in_exception_messages'),
+            ];
+
             if ($this->isUniqueConstraintError($e)) {
-                throw new TranslatedUniqueConstraintViolationException(
-                    $this->getName(), $query, $this->prepareBindings($bindings), $e, $this->getQueryGrammar(), $this->config
-                );
+                throw new TranslatedUniqueConstraintViolationException(...$arguments);
             }
 
-            throw new TranslatedQueryException(
-                $this->getName(), $query, $this->prepareBindings($bindings), $e, $this->getQueryGrammar(), $this->config
-            );
+            throw new TranslatedQueryException(...$arguments);
         }
+    }
+
+    /**
+     * The connection details a query exception carries: the framework's safe subset (no
+     * credentials), plus the encoding needed to translate the driver's error message.
+     */
+    protected function getConnectionDetails(): array
+    {
+        return parent::getConnectionDetails() + [
+            'from_encoding' => $this->getConfig('from_encoding'),
+        ];
     }
 }

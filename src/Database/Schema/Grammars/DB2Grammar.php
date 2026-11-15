@@ -492,9 +492,10 @@ class DB2Grammar extends Grammar
      */
     protected function typeText(Fluent $column): string
     {
-        $colLength = ($column->length ? $column->length : 16369);
-
-        return "varchar($colLength)";
+        // A varchar counts against DB2's 32766-byte row limit, so a few wide text columns
+        // (e.g. failed_jobs) overflow it with SQL0101; a clob is stored off-row. Like the
+        // framework's own grammars, the length is not applied.
+        return 'clob';
     }
 
     /**
@@ -506,9 +507,7 @@ class DB2Grammar extends Grammar
      */
     protected function typeMediumText(Fluent $column): string
     {
-        $colLength = ($column->length ? $column->length : 10000);
-
-        return "varchar($colLength)";
+        return 'clob';
     }
 
     /**
@@ -729,6 +728,18 @@ class DB2Grammar extends Grammar
     protected function typeBinary(Fluent $column): string
     {
         return 'blob';
+    }
+
+    /**
+     * Create the column definition for a uuid type.
+     *
+     * @param Fluent $column
+     *
+     * @return string
+     */
+    protected function typeUuid(Fluent $column): string
+    {
+        return 'char(36)';
     }
 
     /**

@@ -62,3 +62,63 @@ it('throws a TranslatedQueryException for a generic query error, wrapped only on
 
     }
 });
+
+function catchQueryException(DB2Connection $connection, string $sql, array $bindings = []): TranslatedQueryException
+{
+    try {
+        $connection->statement($sql, $bindings);
+    } catch (TranslatedQueryException $e) {
+        return $e;
+    }
+
+    throw new Exception('Expected a TranslatedQueryException to be thrown.');
+}
+
+function makeFailingDb2Connection(array $config): DB2Connection
+{
+    $pdo = new FakePDO();
+    $pdo->exceptionToThrow = new PDOException('SQL0204 - ORDERS not found.');
+
+    return new DB2Connection($pdo, 'TESTDB', '', $config + ['driver' => 'db2_odbc', 'schema' => 'test']);
+}
+
+it('keeps credentials out of the connection details an exception carries', function () {
+    $connection = makeFailingDb2Connection([
+        'host' => 'db.example.test',
+        'username' => 'app',
+        'password' => 'hunter2',
+        'odbc_keywords' => ['SIGNON' => 3],
+    ]);
+
+    $details = catchQueryException($connection, 'select * from orders')->getConnectionDetails();
+
+    expect($details)->toHaveKey('host', 'db.example.test')
+        ->and($details)->not->toHaveKeys(['username', 'password', 'odbc_keywords']);
+});
+
+it('translates the driver message from the configured encoding', function () {
+    $pdo = new FakePDO();
+    $pdo->exceptionToThrow = new PDOException("SQL0204 - caf\xE9 not found.");
+    $connection = new DB2Connection($pdo, 'TESTDB', '', [
+        'driver' => 'db2_odbc', 'schema' => 'test', 'from_encoding' => 'ISO-8859-1',
+    ]);
+
+    expect(catchQueryException($connection, 'select * from orders')->getMessage())
+        ->toContain('SQL0204 - café not found.');
+});
+
+it('substitutes bindings into the message by default', function () {
+    $connection = makeFailingDb2Connection([]);
+
+    expect(catchQueryException($connection, 'select * from orders where sku = ?', ['ABC-1'])->getMessage())
+        ->toContain("where sku = 'ABC-1'");
+});
+
+it('masks bindings in the message when mask_bindings_in_exception_messages is set', function () {
+    $connection = makeFailingDb2Connection(['mask_bindings_in_exception_messages' => true]);
+
+    $message = catchQueryException($connection, 'select * from orders where sku = ?', ['ABC-1'])->getMessage();
+
+    expect($message)->toContain('where sku = ?')
+        ->and($message)->not->toContain('ABC-1');
+});
