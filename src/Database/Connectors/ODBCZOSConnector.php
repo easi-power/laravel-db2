@@ -22,8 +22,6 @@ class ODBCZOSConnector extends ODBCConnector
             'Hostname=%s',
             'Port=%s',
             'Protocol=TCPIP',
-            'Uid=%s',
-            'Pwd=%s',
             '', // Just to add a semicolon to the end of string
         ];
 
@@ -32,8 +30,6 @@ class ODBCZOSConnector extends ODBCConnector
             $config['database'],
             $config['host'],
             $config['port'],
-            $config['username'],
-            $config['password'],
         ];
 
         return sprintf(implode(';', $dsnParts), ...$dsnConfig);
